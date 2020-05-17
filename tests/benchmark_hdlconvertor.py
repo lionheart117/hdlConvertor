@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import hdlConvertor
 from hdlConvertorAst.language import Language
@@ -7,6 +8,12 @@ from hdlConvertorAst.language import Language
 
 filelist = sys.argv[1]
 include_dirs = []
+
+if not os.path.exists("./verilator_temp"):
+    os.mkdir("./verilator_temp")
+elif not os.path.isdir("./verilator_temp"):
+    os.mkdir("./verilator_temp")
+
 c = hdlConvertor.HdlConvertor()
 ISOTIMEFORMAT = "%Y%m%d%H%M%S"
 logfilename = 'benchmark_hdlconvertor_log' + str(time.strftime(ISOTIMEFORMAT))
@@ -17,7 +24,10 @@ with open(filelist,'r') as fp:
     for filename in fp:
         sum_cnt += 1
         try:
-            d = c.parse(filename.replace("\n",""), Language.SYSTEM_VERILOG, include_dirs, hierarchyOnly=False, debug=True)
+            a = list(os.path.split(os.path.abspath(filename.replace("\n",""))))
+            filename_new = a[0] + "/verilator_temp/" + a[1]
+            os.system("verilator " + filename.replace("\n","") + " -E > " + filename_new)
+            d = c.parse(filename_new, Language.SYSTEM_VERILOG, include_dirs, hierarchyOnly=False, debug=True)
         except hdlConvertor._hdlConvertor.ParseException as e:
             err_cnt += 1
             flog.write(("No.%d:Error occurs:" % sum_cnt) + e.__str__())
